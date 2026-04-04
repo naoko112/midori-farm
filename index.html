@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>美土里農園 収穫・在庫管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* CSS Styles */
+:root {
+  --primary: #2C5E3B; /* Organic green */
+  --primary-light: #E8F0EA;
+  --ninjin: #E65C00;
+  --ninjin-bg: #FFF0E5;
+  --imo: #8A3324;
+  --imo-bg: #F5EAE6;
+  --bg: #F7FBFA;
+  --surface: #FFFFFF;
+  --text: #333333;
+  --text-light: #666666;
+  --border: #E0E0E0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+  font-family: 'Noto Sans JP', sans-serif; 
+  background: var(--bg); 
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-container {
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--surface);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+header {
+  background: linear-gradient(135deg, #2C5E3B, #3A7A4D);
+  color: white;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  box-shadow: 0 4px 10px rgba(44, 94, 59, 0.2);
+}
+h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;}
+.tabs { display: flex; overflow-x: auto; gap: 8px; padding: 1rem; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { 
+  flex: 0 0 auto; 
+  padding: 10px 16px; 
+  border: none; 
+  border-radius: 20px; 
+  font-size: 14px; 
+  font-weight: 700; 
+  cursor: pointer; 
+  background: var(--bg); 
+  color: var(--text-light); 
+  transition: all 0.2s ease; 
+}
+.tab.active { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(44, 94, 59, 0.3); }
+
+.section { display: none; padding: 0 1rem 2rem; animation: fadeIn 0.3s ease; }
+.section.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Cards */
+.cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 2rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between;}
+.card-label { font-size: 12px; font-weight: 700; color: var(--text-light); margin-bottom: 4px; }
+.card-value { font-size: 22px; font-weight: 700; color: var(--primary); }
+
+/* Forms */
+.form-card { border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.02);}
+.form-row { margin-bottom: 1.25rem; }
+.form-row label { display: block; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.form-row input { 
+  width: 100%; padding: 12px 14px; 
+  border: 1px solid var(--border); border-radius: 8px; 
+  font-size: 16px; /* 16px prevents iOS zoom on focus */
+  transition: border-color 0.2s;
+  background: var(--bg);
+}
+.form-row input:focus { outline: none; border-color: var(--primary); background: var(--surface); }
+
+.type-group { display: flex; gap: 10px; }
+.type-btn { 
+  flex: 1; padding: 12px; border: 2px solid var(--border); 
+  border-radius: 10px; font-size: 15px; font-weight: 700;
+  cursor: pointer; background: var(--surface); color: var(--text-light); 
+  text-align: center; transition: all 0.2s ease; 
+}
+.type-btn.selected-ninjin { background: var(--ninjin-bg); color: var(--ninjin); border-color: var(--ninjin); }
+.type-btn.selected-imo { background: var(--imo-bg); color: var(--imo); border-color: var(--imo); }
+
+.btn { 
+  padding: 14px 20px; border: none; border-radius: 10px; 
+  font-size: 16px; font-weight: 700; cursor: pointer; 
+  transition: transform 0.1s, opacity 0.2s; 
+  width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px;
+}
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: linear-gradient(135deg, var(--primary), #3A7A4D); color: white; box-shadow: 0 4px 12px rgba(44,94,59,0.3); }
+.btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); margin-top: 1rem;}
+
+.badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+.badge-ninjin { background: var(--ninjin-bg); color: var(--ninjin); }
+.badge-imo { background: var(--imo-bg); color: var(--imo); }
+.badge-type { background: var(--bg); color: var(--text-light); border: 1px solid var(--border);}
+
+/* Lists & Tables */
+.log-item {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.log-header { display: flex; justify-content: space-between; align-items: center; }
+.log-meta { display: flex; gap: 8px; align-items: center; }
+.log-amount { font-size: 16px; font-weight: 700; }
+.log-date { font-size: 12px; color: var(--text-light); }
+.log-memo { font-size: 13px; color: var(--text-light); background: var(--bg); padding: 8px; border-radius: 6px; margin-top: 4px;}
+
+.empty { font-size: 15px; color: var(--text-light); padding: 3rem 0; text-align: center; }
+
+/* Chart container */
+.chart-container { margin-top: 2rem; padding: 1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.chart-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 1rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header>
+    <h2>🌱 美土里農園 管理アプリ</h2>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard')">ダッシュボード</button>
+    <button class="tab" onclick="switchTab('harvest')">収穫を記録</button>
+    <button class="tab" onclick="switchTab('ship')">出荷を記録</button>
+    <button class="tab" onclick="switchTab('log')">履歴一覧</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="section active">
+    <div class="cards">
+      <div class="card"><div class="card-label">🥕 人参 現在庫</div><div class="card-value" id="ninjin-stock">0 kg</div></div>
+      <div class="card"><div class="card-label">🍠 さつまいも 現在庫</div><div class="card-value" id="imo-stock">0 kg</div></div>
+      <div class="card"><div class="card-label">📈 今月の収穫</div><div class="card-value" id="monthly-harvest">0 kg</div></div>
+      <div class="card"><div class="card-label">📦 今月の出荷</div><div class="card-value" id="monthly-ship">0 kg</div></div>
+    </div>
+    
+    <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">最近の記録</h3>
+    <div id="dashboard-log" class="empty">まだ記録がありません</div>
+
+    <div class="chart-container">
+      <div class="chart-title">直近の推移（収穫・出荷）</div>
+      <canvas id="myChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Harvest -->
+  <div id="harvest" class="section">
+    <div class="form-card">
+      <div class="form-row">
+        <label>野菜の種類を選んでください</label>
+        <div class="type-group">
+          <div class="type-btn" id="h-ninjin" onclick="selectType('harvest','ninjin')">🥕 人参</div>
+          <div class="type-btn" id="h-imo" onclick="selectType('harvest','imo')">🍠 さつまいも</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>収穫量（kg）</label>
+        <input type="number" id="harvest-kg" placeholder="例: 50" min="0" step="1" inputmode="numeric">
+      </div>
+      <div class="form-row">
+        <label>収穫日</label>
+        <input type="date" id="harvest-date">
+      </div>
+      <div class="form-row">
+        <label>メモ（任意・天候や区画など）</label>
+        <input type="text" id="harvest-memo" placeholder="例: A区画、天気よかった">
+      </div>
+      <button class="btn btn-primary" onclick="recordHarvest()">✨ 収穫を記録する</button>
+    </div>
+  </div>
+
+  <!-- Ship -->
+  <div id="ship" class="section">
+    <div class="form-card">
+      <div class="form-row">
+        <label>野菜の種類を選んでください</label>
+        <div class="type-group">
+          <div class="type-btn" id="s-ninjin" onclick="selectType('ship','ninjin')">🥕 人参</div>
+          <div class="type-btn" id="s-imo" onclick="selectType('ship','imo')">🍠 さつまいも</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>出荷量（kg）</label>
+        <input type="number" id="ship-kg" placeholder="例: 20" min="0" step="1" inputmode="numeric">
+      </div>
+      <div class="form-row">
+        <label>出荷先（任意）</label>
+        <input type="text" id="ship-dest" placeholder="例: ポケットマルシェ、直売所">
+      </div>
+      <div class="form-row">
+        <label>出荷日</label>
+        <input type="date" id="ship-date">
+      </div>
+      <button class="btn btn-primary" onclick="recordShip()">🚚 出荷を記録する</button>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div id="log" class="section">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+      <h3 style="font-size: 15px; font-weight: 700;">すべての記録</h3>
+      <button class="btn btn-secondary" style="margin: 0; padding: 6px 12px; font-size: 13px; width: auto;" onclick="exportCSV()">CSV書き出し</button>
+    </div>
+    <div id="log-content" class="empty">まだ記録がありません</div>
+  </div>
+
+</div>
+
+<script>
+// --- State Management ---
+const STORAGE_KEY = 'midori_farm_state';
+let state = { ninjin: 0, imo: 0, logs: [], harvestType: null, shipType: null };
+
+function loadState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      state = JSON.parse(saved);
+      if (!state.logs) state.logs = [];
+    } catch (e) {
+      console.error('Failed to parse local storage', e);
+    }
+  }
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// --- Initialization ---
+loadState();
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('harvest-date').value = today;
+document.getElementById('ship-date').value = today;
+
+let chartInstance = null;
+renderDashboard();
+
+// Delayed chart init to ensure canvas is ready
+setTimeout(initChart, 100);
+
+// --- UI Navigation ---
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['dashboard','harvest','ship','log'][i] === tab);
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  
+  if (tab === 'log') renderLog();
+  if (tab === 'dashboard') {
+    renderDashboard();
+    updateChart();
+  }
+  
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function selectType(form, type) {
+  const prefix = form === 'harvest' ? 'h' : 's';
+  document.getElementById(prefix+'-ninjin').className = 'type-btn' + (type==='ninjin' ? ' selected-ninjin' : '');
+  document.getElementById(prefix+'-imo').className = 'type-btn' + (type==='imo' ? ' selected-imo' : '');
+  if (form === 'harvest') state.harvestType = type;
+  else state.shipType = type;
+}
+
+// --- Data Operations ---
+function recordHarvest() {
+  if (!state.harvestType) { alert('野菜の種類を選んでください'); return; }
+  const kg = parseInt(document.getElementById('harvest-kg').value);
+  if (!kg || kg <= 0) { alert('正しい収穫量を入力してください'); return; }
+  const date = document.getElementById('harvest-date').value;
+  const memo = document.getElementById('harvest-memo').value;
+  
+  state[state.harvestType] += kg;
+  state.logs.unshift({ id: Date.now(), type: 'harvest', veg: state.harvestType, kg, date, memo });
+  
+  document.getElementById('harvest-kg').value = '';
+  document.getElementById('harvest-memo').value = '';
+  document.getElementById('harvest-date').value = today;
+  state.harvestType = null;
+  document.getElementById('h-ninjin').className = 'type-btn';
+  document.getElementById('h-imo').className = 'type-btn';
+  
+  saveState();
+  alert('🌱 収穫を記録しました！');
+  switchTab('dashboard');
+}
+
+function recordShip() {
+  if (!state.shipType) { alert('野菜の種類を選んでください'); return; }
+  const kg = parseInt(document.getElementById('ship-kg').value);
+  if (!kg || kg <= 0) { alert('正しい出荷量を入力してください'); return; }
+  if (kg > state[state.shipType]) { 
+    alert(`在庫が足りません（現在の在庫: ${state[state.shipType]} kg）`); 
+    return; 
+  }
+  const date = document.getElementById('ship-date').value;
+  const dest = document.getElementById('ship-dest').value;
+  
+  state[state.shipType] -= kg;
+  state.logs.unshift({ id: Date.now(), type: 'ship', veg: state.shipType, kg, date, dest });
+  
+  document.getElementById('ship-kg').value = '';
+  document.getElementById('ship-dest').value = '';
+  document.getElementById('ship-date').value = today;
+  state.shipType = null;
+  document.getElementById('s-ninjin').className = 'type-btn';
+  document.getElementById('s-imo').className = 'type-btn';
+  
+  saveState();
+  alert('🚚 出荷を記録しました！');
+  switchTab('dashboard');
+}
+
+// --- Rendering ---
+function renderDashboard() {
+  document.getElementById('ninjin-stock').textContent = state.ninjin + ' kg';
+  document.getElementById('imo-stock').textContent = state.imo + ' kg';
+  
+  const now = new Date();
+  const currentMonthPrefix = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  
+  const monthLogs = state.logs.filter(l => l.date && l.date.startsWith(currentMonthPrefix));
+  const mh = monthLogs.filter(l => l.type === 'harvest').reduce((a,b) => a + b.kg, 0);
+  const ms = monthLogs.filter(l => l.type === 'ship').reduce((a,b) => a + b.kg, 0);
+  
+  document.getElementById('monthly-harvest').textContent = mh + ' kg';
+  document.getElementById('monthly-ship').textContent = ms + ' kg';
+  
+  const latest = state.logs.slice(0,3);
+  const el = document.getElementById('dashboard-log');
+  if (!latest.length) { 
+    el.innerHTML = '<div class="empty">まだ記録がありません</div>'; 
+    return; 
+  }
+  
+  el.innerHTML = latest.map(l => buildLogItemHTML(l)).join('');
+}
+
+function renderLog() {
+  const el = document.getElementById('log-content');
+  if (!state.logs.length) { 
+    el.innerHTML = '<div class="empty">まだ記録がありません</div>'; 
+    return; 
+  }
+  el.innerHTML = state.logs.map(l => buildLogItemHTML(l, true)).join('');
+}
+
+function buildLogItemHTML(l, showMemo = false) {
+  const vegName = l.veg === 'ninjin' ? '人参' : 'さつまいも';
+  const typeName = l.type === 'harvest' ? '収穫' : '出荷';
+  const prefix = l.type === 'harvest' ? '+' : '-';
+  const color = l.type === 'harvest' ? 'var(--primary)' : '#D32F2F';
+  const detail = l.type === 'harvest' ? l.memo : l.dest;
+  
+  let html = `
+    <div class="log-item">
+      <div class="log-header">
+        <div class="log-meta">
+          <span class="badge badge-${l.veg}">${vegName}</span>
+          <span class="badge badge-type">${typeName}</span>
+        </div>
+        <div class="log-amount" style="color: ${color};">${prefix}${l.kg} kg</div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="log-date">${l.date}</span>
+      </div>`;
+      
+  if (showMemo && detail) {
+    html += `<div class="log-memo">📝 ${detail}</div>`;
+  }
+  
+  html += `</div>`;
+  return html;
+}
+
+// --- Chart.js ---
+function initChart() {
+  const canvas = document.getElementById('myChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  
+  Chart.defaults.font.family = "'Noto Sans JP', sans-serif";
+  Chart.defaults.color = '#666';
+  
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: [], datasets: [] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: {size: 11} } }
+      }
+    }
+  });
+  updateChart();
+}
+
+function updateChart() {
+  if (!chartInstance) return;
+  
+  // Collect all distinct dates from logs
+  const agg = {};
+  state.logs.forEach(l => {
+    if (!agg[l.date]) agg[l.date] = { h_ninjin:0, h_imo:0, s_total:0 };
+    if (l.type === 'harvest') {
+      if (l.veg === 'ninjin') agg[l.date].h_ninjin += l.kg;
+      if (l.veg === 'imo') agg[l.date].h_imo += l.kg;
+    } else {
+      agg[l.date].s_total += l.kg;
+    }
+  });
+  
+  // Sort dates
+  const dates = Object.keys(agg).sort();
+  // Get last 7 active dates
+  const recentDates = dates.slice(-7);
+  
+  if (recentDates.length === 0) {
+    chartInstance.data.labels = [];
+    chartInstance.data.datasets = [];
+    chartInstance.update();
+    return;
+  }
+  
+  const formattedDates = recentDates.map(d => {
+    const parts = d.split('-');
+    return `${parts[1]}/${parts[2]}`;
+  });
+  
+  const data_h_ninjin = recentDates.map(d => agg[d].h_ninjin);
+  const data_h_imo = recentDates.map(d => agg[d].h_imo);
+  const data_s_total = recentDates.map(d => agg[d].s_total);
+  
+  chartInstance.data.labels = formattedDates;
+  chartInstance.data.datasets = [
+    { label: '人参(収穫)', data: data_h_ninjin, backgroundColor: '#E65C00', borderRadius: 4 },
+    { label: 'さつまいも(収穫)', data: data_h_imo, backgroundColor: '#8A3324', borderRadius: 4 },
+    { label: '出荷計', data: data_s_total, backgroundColor: '#4A90E2', borderRadius: 4 }
+  ];
+  chartInstance.update();
+}
+
+// --- CSV Export ---
+function exportCSV() {
+  if (!state.logs.length) { alert('出力する記録がありません'); return; }
+  
+  const BOM = "\uFEFF";
+  let csvContent = "日時,野菜,区分,量(kg),備考\r\n";
+  
+  state.logs.forEach(l => {
+    const vegName = l.veg === 'ninjin' ? '人参' : 'さつまいも';
+    const typeName = l.type === 'harvest' ? '収穫' : '出荷';
+    const detail = l.type === 'harvest' ? (l.memo || '') : (l.dest || '');
+    
+    // escape quotes
+    let safeDetail = detail.replace(/"/g, '""');
+    if (safeDetail.search(/("|,|\n)/g) >= 0) safeDetail = `"${safeDetail}"`;
+    
+    csvContent += `${l.date},${vegName},${typeName},${l.kg},${safeDetail}\r\n`;
+  });
+  
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `midori_farm_log_${today}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+</script>
+
+</body>
+</html>
