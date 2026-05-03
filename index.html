@@ -94,8 +94,7 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
   cursor: pointer; background: var(--surface); color: var(--text-light); 
   text-align: center; transition: all 0.2s ease; 
 }
-.type-btn.selected-ninjin { background: var(--ninjin-bg); color: var(--ninjin); border-color: var(--ninjin); }
-.type-btn.selected-imo { background: var(--imo-bg); color: var(--imo); border-color: var(--imo); }
+.type-btn.selected-crop { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
 
 .btn { 
   padding: 14px 20px; border: none; border-radius: 10px; 
@@ -109,8 +108,7 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
 .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); margin-top: 1rem;}
 
 .badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; }
-.badge-ninjin { background: var(--ninjin-bg); color: var(--ninjin); }
-.badge-imo { background: var(--imo-bg); color: var(--imo); }
+.badge-crop { background: var(--primary-light); color: var(--primary); }
 .badge-type { background: var(--bg); color: var(--text-light); border: 1px solid var(--border);}
 
 /* Lists & Tables */
@@ -129,6 +127,35 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
 /* Chart container */
 .chart-container { margin-top: 2rem; padding: 1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
 .chart-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 1rem; text-align: center; }
+
+/* Farm Map */
+.farm-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 2rem;
+}
+.plot-cell {
+  aspect-ratio: 1;
+  background: var(--primary-light);
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.plot-cell:active { transform: scale(0.95); }
+.plot-cell:hover { background: var(--primary); color: white; }
+.plot-break { grid-column-start: 1; }
+
+.back-btn { margin-bottom: 1rem; color: var(--primary); font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 8px 0;}
+.ridge-card { border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; background: var(--surface); box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+.ridge-title { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 12px; border-bottom: 2px solid var(--primary-light); padding-bottom: 4px;}
 </style>
 </head>
 <body>
@@ -143,13 +170,16 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
     <button class="tab" onclick="switchTab('harvest')">収穫を記録</button>
     <button class="tab" onclick="switchTab('ship')">出荷を記録</button>
     <button class="tab" onclick="switchTab('log')">履歴一覧</button>
+    <button class="tab" onclick="switchTab('farm-map')">🗺️ 農地マップ</button>
+    <button class="tab" onclick="switchTab('crop-master')">⚙️ 作物管理</button>
   </div>
 
   <!-- Dashboard -->
   <div id="dashboard" class="section active">
+    <div class="cards" id="dashboard-stock-cards">
+      <!-- Dynamic stock cards -->
+    </div>
     <div class="cards">
-      <div class="card"><div class="card-label">🥕 人参 現在庫</div><div class="card-value" id="ninjin-stock">0 kg</div></div>
-      <div class="card"><div class="card-label">🍠 さつまいも 現在庫</div><div class="card-value" id="imo-stock">0 kg</div></div>
       <div class="card"><div class="card-label">📈 今月の収穫</div><div class="card-value" id="monthly-harvest">0 kg</div></div>
       <div class="card"><div class="card-label">📦 今月の出荷</div><div class="card-value" id="monthly-ship">0 kg</div></div>
     </div>
@@ -170,9 +200,8 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
     <div class="form-card">
       <div class="form-row">
         <label>野菜の種類を選んでください</label>
-        <div class="type-group">
-          <div class="type-btn" id="h-ninjin" onclick="selectType('harvest','ninjin')">🥕 人参</div>
-          <div class="type-btn" id="h-imo" onclick="selectType('harvest','imo')">🍠 さつまいも</div>
+        <div class="type-group" id="harvest-crop-list" style="flex-wrap: wrap;">
+          <!-- Dynamic crop buttons -->
         </div>
       </div>
       <div class="form-row">
@@ -196,9 +225,8 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
     <div class="form-card">
       <div class="form-row">
         <label>野菜の種類を選んでください</label>
-        <div class="type-group">
-          <div class="type-btn" id="s-ninjin" onclick="selectType('ship','ninjin')">🥕 人参</div>
-          <div class="type-btn" id="s-imo" onclick="selectType('ship','imo')">🍠 さつまいも</div>
+        <div class="type-group" id="ship-crop-list" style="flex-wrap: wrap;">
+          <!-- Dynamic crop buttons -->
         </div>
       </div>
       <div class="form-row">
@@ -226,22 +254,96 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
     <div id="log-content"></div>
   </div>
 
+  <!-- Farm Map -->
+  <div id="farm-map" class="section">
+    <div id="map-view">
+      <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">農地マップ（16区画）</h3>
+      <div class="farm-grid" id="farm-grid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+    <div id="plot-view" style="display: none;">
+      <div class="back-btn" onclick="showMapView()">← マップに戻る</div>
+      <h3 id="plot-title" style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">区画</h3>
+      <div id="ridges-container">
+        <!-- Forms for ridges -->
+      </div>
+      <button class="btn btn-primary" onclick="savePlot()">💾 保存する</button>
+    </div>
+  </div>
+
+  <!-- Crop Master -->
+  <div id="crop-master" class="section">
+    <div class="form-card">
+      <div class="form-row">
+        <label>新しい作物を追加</label>
+        <input type="text" id="new-crop-name" placeholder="例: 🍅 トマト">
+      </div>
+      <button class="btn btn-primary" onclick="addCrop()">➕ 追加する</button>
+    </div>
+    
+    <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; margin-top: 2rem;">登録済みの作物</h3>
+    <div id="crop-list"></div>
+  </div>
+
 </div>
 
 <script>
 // --- State Management ---
 const STORAGE_KEY = 'midori_farm_state';
-let state = { ninjin: 0, imo: 0, logs: [], harvestType: null, shipType: null };
+let state = { logs: [], harvestType: null, shipType: null, farmData: {}, crops: [] };
 
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
-      state = JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      state = { ...state, ...parsed };
       if (!state.logs) state.logs = [];
+      if (!state.farmData) state.farmData = {};
     } catch (e) {
       console.error('Failed to parse local storage', e);
     }
+  }
+  
+  const hasOldDefaults = state.crops && state.crops.some(c => c.id === 'ninjin_wase');
+  if (!state.crops || state.crops.length === 0 || hasOldDefaults) {
+    let nStock = state.ninjin || 0;
+    let iStock = state.imo || 0;
+    if (state.crops) {
+      const oN = state.crops.find(c => c.id === 'ninjin_wase' || c.id === 'ninjin');
+      if (oN) nStock = oN.stock;
+      const oI = state.crops.find(c => c.id === 'imo_beniharuka' || c.id === 'imo');
+      if (oI) iStock = oI.stock;
+    }
+    
+    state.crops = [
+      { id: 'ninjin_natsu', name: '🥕 にんじん（夏まき）', stock: nStock },
+      { id: 'ninjin_fuyu', name: '🥕 にんじん（冬まき）', stock: 0 },
+      { id: 'imo_beniharuka', name: '🍠 さつまいも（紅はるか）', stock: iStock },
+      { id: 'imo_silk', name: '🍠 さつまいも（シルクスイート）', stock: 0 },
+      { id: 'imo_beniazuma', name: '🍠 さつまいも（紅あずま）', stock: 0 }
+    ];
+    delete state.ninjin;
+    delete state.imo;
+    saveState();
+  }
+
+  // Migrate legacy logs to include vegName
+  if (state.logs && state.logs.length > 0) {
+    let migrated = false;
+    state.logs.forEach(l => {
+      if (!l.vegName) {
+        if (l.veg === 'ninjin' || l.veg === 'ninjin_wase') l.vegName = '🥕 にんじん（夏まき）';
+        else if (l.veg === 'imo' || l.veg === 'imo_beniharuka') l.vegName = '🍠 さつまいも（紅はるか）';
+        else {
+          const crop = state.crops.find(c => c.id === l.veg);
+          l.vegName = crop ? crop.name : l.veg;
+        }
+        migrated = true;
+      }
+    });
+    if (migrated) saveState();
   }
 }
 
@@ -260,11 +362,13 @@ renderDashboard();
 
 // Delayed chart init to ensure canvas is ready
 setTimeout(initChart, 100);
+renderCropMaster();
+renderHarvestShipForms();
 
 // --- UI Navigation ---
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', ['dashboard','harvest','ship','log'][i] === tab);
+    t.classList.toggle('active', ['dashboard','harvest','ship','log','farm-map','crop-master'][i] === tab);
   });
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(tab).classList.add('active');
@@ -274,14 +378,37 @@ function switchTab(tab) {
     renderDashboard();
     updateChart();
   }
+  if (tab === 'farm-map') {
+    renderFarmMap();
+    showMapView();
+  }
   
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
+function renderHarvestShipForms() {
+  const hList = document.getElementById('harvest-crop-list');
+  const sList = document.getElementById('ship-crop-list');
+  if (!hList || !sList) return;
+  
+  let html = '';
+  state.crops.forEach(c => {
+    html += `<div class="type-btn" id="btn-{prefix}-${c.id}" onclick="selectType('{form}','${c.id}')">${c.name}</div>`;
+  });
+  
+  hList.innerHTML = html.replace(/{prefix}/g, 'h').replace(/{form}/g, 'harvest');
+  sList.innerHTML = html.replace(/{prefix}/g, 's').replace(/{form}/g, 'ship');
+  
+  if (state.harvestType) selectType('harvest', state.harvestType);
+  if (state.shipType) selectType('ship', state.shipType);
+}
+
 function selectType(form, type) {
   const prefix = form === 'harvest' ? 'h' : 's';
-  document.getElementById(prefix+'-ninjin').className = 'type-btn' + (type==='ninjin' ? ' selected-ninjin' : '');
-  document.getElementById(prefix+'-imo').className = 'type-btn' + (type==='imo' ? ' selected-imo' : '');
+  state.crops.forEach(c => {
+    const el = document.getElementById(`btn-${prefix}-${c.id}`);
+    if (el) el.className = 'type-btn' + (type === c.id ? ' selected-crop' : '');
+  });
   if (form === 'harvest') state.harvestType = type;
   else state.shipType = type;
 }
@@ -294,15 +421,20 @@ function recordHarvest() {
   const date = document.getElementById('harvest-date').value;
   const memo = document.getElementById('harvest-memo').value;
   
-  state[state.harvestType] += kg;
-  state.logs.unshift({ id: Date.now(), type: 'harvest', veg: state.harvestType, kg, date, memo });
+  const crop = state.crops.find(c => c.id === state.harvestType);
+  if (crop) crop.stock += kg;
+  
+  state.logs.unshift({ id: Date.now(), type: 'harvest', veg: state.harvestType, vegName: crop ? crop.name : state.harvestType, kg, date, memo });
   
   document.getElementById('harvest-kg').value = '';
   document.getElementById('harvest-memo').value = '';
   document.getElementById('harvest-date').value = today;
   state.harvestType = null;
-  document.getElementById('h-ninjin').className = 'type-btn';
-  document.getElementById('h-imo').className = 'type-btn';
+  
+  state.crops.forEach(c => {
+    const el = document.getElementById(`btn-h-${c.id}`);
+    if (el) el.className = 'type-btn';
+  });
   
   saveState();
   alert('🌱 収穫を記録しました！');
@@ -313,32 +445,136 @@ function recordShip() {
   if (!state.shipType) { alert('野菜の種類を選んでください'); return; }
   const kg = parseInt(document.getElementById('ship-kg').value);
   if (!kg || kg <= 0) { alert('正しい出荷量を入力してください'); return; }
-  if (kg > state[state.shipType]) { 
-    alert(`在庫が足りません（現在の在庫: ${state[state.shipType]} kg）`); 
+  
+  const crop = state.crops.find(c => c.id === state.shipType);
+  if (!crop) return;
+  if (kg > crop.stock) { 
+    alert(`在庫が足りません（現在の在庫: ${crop.stock} kg）`); 
     return; 
   }
+  
   const date = document.getElementById('ship-date').value;
   const dest = document.getElementById('ship-dest').value;
   
-  state[state.shipType] -= kg;
-  state.logs.unshift({ id: Date.now(), type: 'ship', veg: state.shipType, kg, date, dest });
+  crop.stock -= kg;
+  state.logs.unshift({ id: Date.now(), type: 'ship', veg: state.shipType, vegName: crop.name, kg, date, dest });
   
   document.getElementById('ship-kg').value = '';
   document.getElementById('ship-dest').value = '';
   document.getElementById('ship-date').value = today;
   state.shipType = null;
-  document.getElementById('s-ninjin').className = 'type-btn';
-  document.getElementById('s-imo').className = 'type-btn';
+  
+  state.crops.forEach(c => {
+    const el = document.getElementById(`btn-s-${c.id}`);
+    if (el) el.className = 'type-btn';
+  });
   
   saveState();
   alert('🚚 出荷を記録しました！');
   switchTab('dashboard');
 }
 
+// --- Farm Map Operations ---
+let currentPlot = null;
+
+function renderFarmMap() {
+  const grid = document.getElementById('farm-grid');
+  let html = '';
+  for (let i = 1; i <= 16; i++) {
+    let extraClass = (i === 15) ? ' plot-break' : '';
+    
+    // Check if plot has data
+    const plotData = state.farmData[i];
+    let hasData = false;
+    if (plotData) {
+      for (let r = 1; r <= 4; r++) {
+        if (plotData[r] && (plotData[r].crop || plotData[r].sowDate || plotData[r].harvestDate || plotData[r].memo)) {
+          hasData = true;
+          break;
+        }
+      }
+    }
+    const colorStyle = hasData ? 'background: var(--primary); color: white;' : '';
+    
+    html += `<div class="plot-cell${extraClass}" style="${colorStyle}" onclick="openPlot(${i})">${i}</div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function showMapView() {
+  document.getElementById('map-view').style.display = 'block';
+  document.getElementById('plot-view').style.display = 'none';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function openPlot(plotId) {
+  currentPlot = plotId;
+  document.getElementById('plot-title').textContent = `区画 ${plotId}`;
+  
+  const container = document.getElementById('ridges-container');
+  let html = '';
+  const data = state.farmData[plotId] || {};
+  
+  for (let i = 1; i <= 4; i++) {
+    const rData = data[i] || { crop: '', sowDate: '', harvestDate: '', memo: '' };
+    html += `
+      <div class="ridge-card">
+        <div class="ridge-title">畝 ${i}</div>
+        <div class="form-row">
+          <label>作物の種類・品種</label>
+          <input type="text" id="ridge-${i}-crop" value="${rData.crop}" placeholder="例: 人参（早生種）">
+        </div>
+        <div class="form-row">
+          <label>播種・定植日</label>
+          <input type="date" id="ridge-${i}-sowDate" value="${rData.sowDate}">
+        </div>
+        <div class="form-row">
+          <label>収穫予定日</label>
+          <input type="date" id="ridge-${i}-harvestDate" value="${rData.harvestDate}">
+        </div>
+        <div class="form-row">
+          <label>農薬・肥料の使用記録</label>
+          <input type="text" id="ridge-${i}-memo" value="${rData.memo}" placeholder="例: ぼかし肥料 10kg">
+        </div>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+  
+  document.getElementById('map-view').style.display = 'none';
+  document.getElementById('plot-view').style.display = 'block';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function savePlot() {
+  if (!currentPlot) return;
+  
+  if (!state.farmData) state.farmData = {};
+  if (!state.farmData[currentPlot]) state.farmData[currentPlot] = {};
+  
+  for (let i = 1; i <= 4; i++) {
+    state.farmData[currentPlot][i] = {
+      crop: document.getElementById(`ridge-${i}-crop`).value,
+      sowDate: document.getElementById(`ridge-${i}-sowDate`).value,
+      harvestDate: document.getElementById(`ridge-${i}-harvestDate`).value,
+      memo: document.getElementById(`ridge-${i}-memo`).value
+    };
+  }
+  
+  saveState();
+  alert(`区画 ${currentPlot} の情報を保存しました！`);
+  renderFarmMap();
+  showMapView();
+}
+
 // --- Rendering ---
 function renderDashboard() {
-  document.getElementById('ninjin-stock').textContent = state.ninjin + ' kg';
-  document.getElementById('imo-stock').textContent = state.imo + ' kg';
+  const stockCards = document.getElementById('dashboard-stock-cards');
+  let stockHtml = '';
+  state.crops.forEach(c => {
+    stockHtml += `<div class="card"><div class="card-label">${c.name} 現在庫</div><div class="card-value">${c.stock} kg</div></div>`;
+  });
+  stockCards.innerHTML = stockHtml;
   
   const now = new Date();
   const currentMonthPrefix = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
@@ -370,7 +606,7 @@ function renderLog() {
 }
 
 function buildLogItemHTML(l, showMemo = false) {
-  const vegName = l.veg === 'ninjin' ? '人参' : 'さつまいも';
+  const vegName = l.vegName || l.veg;
   const typeName = l.type === 'harvest' ? '収穫' : '出荷';
   const prefix = l.type === 'harvest' ? '+' : '-';
   const color = l.type === 'harvest' ? 'var(--primary)' : '#D32F2F';
@@ -380,7 +616,7 @@ function buildLogItemHTML(l, showMemo = false) {
     <div class="log-item">
       <div class="log-header">
         <div class="log-meta">
-          <span class="badge badge-${l.veg}">${vegName}</span>
+          <span class="badge badge-crop">${vegName}</span>
           <span class="badge badge-type">${typeName}</span>
         </div>
         <div class="log-amount" style="color: ${color};">${prefix}${l.kg} kg</div>
@@ -431,10 +667,12 @@ function updateChart() {
   // Collect all distinct dates from logs
   const agg = {};
   state.logs.forEach(l => {
-    if (!agg[l.date]) agg[l.date] = { h_ninjin:0, h_imo:0, s_total:0 };
+    if (!agg[l.date]) {
+      agg[l.date] = { s_total: 0 };
+      state.crops.forEach(c => agg[l.date][`h_${c.id}`] = 0);
+    }
     if (l.type === 'harvest') {
-      if (l.veg === 'ninjin') agg[l.date].h_ninjin += l.kg;
-      if (l.veg === 'imo') agg[l.date].h_imo += l.kg;
+      agg[l.date][`h_${l.veg}`] = (agg[l.date][`h_${l.veg}`] || 0) + l.kg;
     } else {
       agg[l.date].s_total += l.kg;
     }
@@ -457,17 +695,75 @@ function updateChart() {
     return `${parts[1]}/${parts[2]}`;
   });
   
-  const data_h_ninjin = recentDates.map(d => agg[d].h_ninjin);
-  const data_h_imo = recentDates.map(d => agg[d].h_imo);
   const data_s_total = recentDates.map(d => agg[d].s_total);
   
+  const colors = ['#E65C00', '#8A3324', '#F5A623', '#4A90E2', '#7ED321', '#BD10E0'];
+  
+  const datasets = state.crops.map((c, i) => {
+    return {
+      label: `${c.name}(収穫)`,
+      data: recentDates.map(d => agg[d][`h_${c.id}`] || 0),
+      backgroundColor: colors[i % colors.length],
+      borderRadius: 4
+    };
+  });
+  
+  datasets.push({
+    label: '出荷計',
+    data: data_s_total,
+    backgroundColor: '#4A90E2',
+    borderRadius: 4
+  });
+  
   chartInstance.data.labels = formattedDates;
-  chartInstance.data.datasets = [
-    { label: '人参(収穫)', data: data_h_ninjin, backgroundColor: '#E65C00', borderRadius: 4 },
-    { label: 'さつまいも(収穫)', data: data_h_imo, backgroundColor: '#8A3324', borderRadius: 4 },
-    { label: '出荷計', data: data_s_total, backgroundColor: '#4A90E2', borderRadius: 4 }
-  ];
+  chartInstance.data.datasets = datasets;
   chartInstance.update();
+}
+
+// --- Crop Master Operations ---
+function renderCropMaster() {
+  const list = document.getElementById('crop-list');
+  if (!list) return;
+  
+  let html = '';
+  state.crops.forEach(c => {
+    html += `
+      <div class="log-item" style="flex-direction: row; justify-content: space-between; align-items: center;">
+        <div style="font-size: 16px; font-weight: 700;">${c.name}</div>
+        <button class="btn btn-secondary" style="margin: 0; padding: 6px 12px; font-size: 13px; width: auto; color: #D32F2F;" onclick="deleteCrop('${c.id}')">削除</button>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+}
+
+function addCrop() {
+  const nameInput = document.getElementById('new-crop-name');
+  const name = nameInput.value.trim();
+  if (!name) return;
+  
+  const id = 'crop_' + Date.now();
+  state.crops.push({ id, name, stock: 0 });
+  saveState();
+  
+  nameInput.value = '';
+  renderCropMaster();
+  renderHarvestShipForms();
+  renderDashboard();
+  alert(`${name} を追加しました！`);
+}
+
+function deleteCrop(id) {
+  if (!confirm('本当に削除しますか？（過去の記録は残ります）')) return;
+  state.crops = state.crops.filter(c => c.id !== id);
+  if (state.harvestType === id) state.harvestType = null;
+  if (state.shipType === id) state.shipType = null;
+  
+  saveState();
+  renderCropMaster();
+  renderHarvestShipForms();
+  renderDashboard();
+  updateChart();
 }
 
 // --- CSV Export ---
@@ -478,7 +774,7 @@ function exportCSV() {
   let csvContent = "日時,野菜,区分,量(kg),備考\r\n";
   
   state.logs.forEach(l => {
-    const vegName = l.veg === 'ninjin' ? '人参' : 'さつまいも';
+    const vegName = l.vegName || l.veg;
     const typeName = l.type === 'harvest' ? '収穫' : '出荷';
     const detail = l.type === 'harvest' ? (l.memo || '') : (l.dest || '');
     
