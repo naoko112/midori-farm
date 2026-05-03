@@ -153,6 +153,21 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
 .plot-cell:hover { background: var(--primary); color: white; }
 .plot-break { grid-column-start: 1; }
 
+.plot-cell.vertical { display: flex; flex-direction: row; }
+.plot-cell.horizontal { display: flex; flex-direction: column; }
+.plot-cell .plot-ridge { flex: 1; display:flex; align-items:center; justify-content:center; font-size: 14px; }
+.plot-cell .plot-path { display:flex; align-items:center; justify-content:center; font-size: 10px; background: rgba(0,0,0,0.05); }
+.plot-cell.vertical .plot-ridge { border-right: 1px solid rgba(0,0,0,0.1); }
+.plot-cell.vertical .plot-ridge:last-child { border-right: none; }
+.plot-cell.vertical .plot-path { width: 6px; border-right: 1px solid rgba(0,0,0,0.1); }
+.plot-cell.horizontal .plot-ridge { border-bottom: 1px solid rgba(0,0,0,0.1); }
+.plot-cell.horizontal .plot-ridge:last-child { border-bottom: none; }
+.plot-cell.horizontal .plot-path { height: 6px; border-bottom: 1px solid rgba(0,0,0,0.1); }
+
+.task-alert { background: #FFF3CD; color: #856404; padding: 12px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 15px; font-weight: 700; display:flex; gap: 8px; align-items: center; border-left: 4px solid #FFEEBA; }
+.task-alert.danger { background: #F8D7DA; color: #721C24; border-left-color: #F5C6CB; }
+.task-container { margin-bottom: 1.5rem; }
+
 .back-btn { margin-bottom: 1rem; color: var(--primary); font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 8px 0;}
 .ridge-card { border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; background: var(--surface); box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
 .ridge-title { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 12px; border-bottom: 2px solid var(--primary-light); padding-bottom: 4px;}
@@ -169,19 +184,22 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
     <button class="tab active" onclick="switchTab('dashboard')">ダッシュボード</button>
     <button class="tab" onclick="switchTab('harvest')">収穫を記録</button>
     <button class="tab" onclick="switchTab('ship')">出荷を記録</button>
+    <button class="tab" onclick="switchTab('waste')">🗑️ 廃棄を記録</button>
     <button class="tab" onclick="switchTab('log')">履歴一覧</button>
     <button class="tab" onclick="switchTab('farm-map')">🗺️ 農地マップ</button>
-    <button class="tab" onclick="switchTab('crop-master')">⚙️ 作物管理</button>
+    <button class="tab" onclick="switchTab('crop-master')">⚙️ マスタ管理</button>
   </div>
 
   <!-- Dashboard -->
   <div id="dashboard" class="section active">
+    <div id="dashboard-tasks" class="task-container"></div>
     <div class="cards" id="dashboard-stock-cards">
       <!-- Dynamic stock cards -->
     </div>
     <div class="cards">
       <div class="card"><div class="card-label">📈 今月の収穫</div><div class="card-value" id="monthly-harvest">0 kg</div></div>
       <div class="card"><div class="card-label">📦 今月の出荷</div><div class="card-value" id="monthly-ship">0 kg</div></div>
+      <div class="card"><div class="card-label">🗑️ 今月の廃棄</div><div class="card-value" id="monthly-waste">0 kg</div></div>
     </div>
     
     <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">最近の記録</h3>
@@ -202,6 +220,33 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
         <label>野菜の種類を選んでください</label>
         <div class="type-group" id="harvest-crop-list" style="flex-wrap: wrap;">
           <!-- Dynamic crop buttons -->
+        </div>
+      </div>
+      <div class="form-row">
+        <label>区画・畝（任意）</label>
+        <div style="display: flex; gap: 8px;">
+          <select id="harvest-plot" style="flex:1; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);" onchange="updateHarvestRidgeOptions()">
+            <option value="">区画を選択</option>
+            <option value="1">区画 1</option>
+            <option value="2">区画 2</option>
+            <option value="3">区画 3</option>
+            <option value="4">区画 4</option>
+            <option value="5">区画 5</option>
+            <option value="6">区画 6</option>
+            <option value="7">区画 7</option>
+            <option value="8">区画 8</option>
+            <option value="9">区画 9</option>
+            <option value="10">区画 10</option>
+            <option value="11">区画 11</option>
+            <option value="12">区画 12</option>
+            <option value="13">区画 13</option>
+            <option value="14">区画 14</option>
+            <option value="15">区画 15</option>
+            <option value="16">区画 16</option>
+          </select>
+          <select id="harvest-ridge" style="flex:1; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);">
+            <option value="">畝を選択</option>
+          </select>
         </div>
       </div>
       <div class="form-row">
@@ -245,6 +290,55 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
     </div>
   </div>
 
+  <!-- Waste -->
+  <div id="waste" class="section">
+    <div class="form-card">
+      <div class="form-row">
+        <label>野菜の種類を選んでください</label>
+        <div class="type-group" id="waste-crop-list" style="flex-wrap: wrap;">
+          <!-- Dynamic crop buttons -->
+        </div>
+      </div>
+      <div class="form-row">
+        <label>区画・畝（任意）</label>
+        <div style="display: flex; gap: 8px;">
+          <select id="waste-plot" style="flex:1; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);" onchange="updateWasteRidgeOptions()">
+            <option value="">区画を選択</option>
+            <option value="1">区画 1</option><option value="2">区画 2</option><option value="3">区画 3</option><option value="4">区画 4</option>
+            <option value="5">区画 5</option><option value="6">区画 6</option><option value="7">区画 7</option><option value="8">区画 8</option>
+            <option value="9">区画 9</option><option value="10">区画 10</option><option value="11">区画 11</option><option value="12">区画 12</option>
+            <option value="13">区画 13</option><option value="14">区画 14</option><option value="15">区画 15</option><option value="16">区画 16</option>
+          </select>
+          <select id="waste-ridge" style="flex:1; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);">
+            <option value="">畝を選択</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>廃棄量（kg）</label>
+        <input type="number" id="waste-kg" placeholder="例: 10" min="0" step="1" inputmode="numeric">
+      </div>
+      <div class="form-row">
+        <label>廃棄日</label>
+        <input type="date" id="waste-date">
+      </div>
+      <div class="form-row">
+        <label>廃棄理由</label>
+        <select id="waste-reason" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);">
+          <option value="腐敗">腐敗</option>
+          <option value="病気">病気</option>
+          <option value="虫害">虫害</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>メモ（任意）</label>
+        <input type="text" id="waste-memo" placeholder="例: 傷みが早かった">
+      </div>
+      <button class="btn btn-primary" onclick="recordWaste()" style="background:#D32F2F; border-color:#B71C1C;">🗑️ 廃棄を記録する</button>
+    </div>
+  </div>
+
   <!-- Log -->
   <div id="log" class="section">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
@@ -264,11 +358,30 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
     </div>
     <div id="plot-view" style="display: none;">
       <div class="back-btn" onclick="showMapView()">← マップに戻る</div>
-      <h3 id="plot-title" style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">区画</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+        <h3 id="plot-title" style="font-size: 18px; font-weight: 700; margin:0;">区画</h3>
+        <button class="btn btn-secondary" style="margin:0; padding:6px 12px; width:auto; font-size:13px;" onclick="showPlotHistory()">履歴を見る</button>
+      </div>
+      <div class="form-card" style="padding:1rem;">
+        <div class="form-row" style="margin-bottom:0;">
+          <label>畝の向き</label>
+          <div class="type-group">
+            <div class="type-btn" id="ori-vertical" onclick="setPlotOrientation('vertical')">縦</div>
+            <div class="type-btn" id="ori-horizontal" onclick="setPlotOrientation('horizontal')">横</div>
+          </div>
+        </div>
+      </div>
       <div id="ridges-container">
         <!-- Forms for ridges -->
       </div>
+      <button class="btn btn-secondary" style="margin-bottom:1rem;" onclick="addRidge()">➕ 畝を追加する</button>
       <button class="btn btn-primary" onclick="savePlot()">💾 保存する</button>
+    </div>
+    
+    <div id="history-view" style="display: none;">
+      <div class="back-btn" onclick="hidePlotHistory()">← 戻る</div>
+      <h3 id="history-title" style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">区画履歴</h3>
+      <div id="history-container"></div>
     </div>
   </div>
 
@@ -284,6 +397,87 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
     
     <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; margin-top: 2rem;">登録済みの作物</h3>
     <div id="crop-list"></div>
+
+    <div class="form-card" style="margin-top: 2rem;">
+      <div class="form-row">
+        <label>新しい肥料を追加</label>
+        <input type="text" id="new-fert-name" placeholder="例: ぼかし肥料">
+      </div>
+      <button class="btn btn-primary" onclick="addFertilizer()">➕ 追加する</button>
+    </div>
+    <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; margin-top: 2rem;">登録済みの肥料</h3>
+    <div id="fert-list"></div>
+  </div>
+
+  <!-- Edit Log Modal -->
+  <div id="edit-log-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="form-card" style="width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+      <h3 style="margin-top:0; font-size: 18px; font-weight: 700; margin-bottom: 16px;">記録の修正</h3>
+      <input type="hidden" id="edit-log-id">
+      
+      <div class="form-row">
+        <label>作物</label>
+        <select id="edit-log-crop" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);"></select>
+      </div>
+      <div class="form-row">
+        <label id="edit-log-amount-label">量 (kg)</label>
+        <input type="number" id="edit-log-kg" min="0" step="1" inputmode="numeric" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);">
+      </div>
+      <div class="form-row">
+        <label>日付</label>
+        <input type="date" id="edit-log-date" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);">
+      </div>
+      
+      <div id="edit-log-harvest-fields" style="display:none;">
+        <div class="form-row">
+          <label>区画・畝</label>
+          <div style="display: flex; gap: 8px;">
+            <select id="edit-log-plot" style="flex:1; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);" onchange="updateEditRidgeOptions()">
+              <option value="">区画を選択</option>
+              <option value="1">区画 1</option><option value="2">区画 2</option><option value="3">区画 3</option><option value="4">区画 4</option>
+              <option value="5">区画 5</option><option value="6">区画 6</option><option value="7">区画 7</option><option value="8">区画 8</option>
+              <option value="9">区画 9</option><option value="10">区画 10</option><option value="11">区画 11</option><option value="12">区画 12</option>
+              <option value="13">区画 13</option><option value="14">区画 14</option><option value="15">区画 15</option><option value="16">区画 16</option>
+            </select>
+            <select id="edit-log-ridge" style="flex:1; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);">
+              <option value="">畝を選択</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>メモ</label>
+          <input type="text" id="edit-log-memo" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);">
+        </div>
+      </div>
+      
+      <div id="edit-log-ship-fields" style="display:none;">
+        <div class="form-row">
+          <label>出荷先</label>
+          <input type="text" id="edit-log-dest" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);">
+        </div>
+      </div>
+      
+      <div id="edit-log-waste-fields" style="display:none;">
+        <div class="form-row">
+          <label>廃棄理由</label>
+          <select id="edit-log-waste-reason" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);">
+            <option value="腐敗">腐敗</option>
+            <option value="病気">病気</option>
+            <option value="虫害">虫害</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>メモ</label>
+          <input type="text" id="edit-log-waste-memo" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);">
+        </div>
+      </div>
+      
+      <div style="display:flex; gap:12px; margin-top:24px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeEditLogModal()">キャンセル</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="saveLogEdit()">保存する</button>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -291,7 +485,7 @@ h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; just
 <script>
 // --- State Management ---
 const STORAGE_KEY = 'midori_farm_state';
-let state = { logs: [], harvestType: null, shipType: null, farmData: {}, crops: [] };
+let state = { logs: [], harvestType: null, shipType: null, farmData: {}, crops: [], fertilizers: [], plotHistories: {} };
 
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -301,9 +495,19 @@ function loadState() {
       state = { ...state, ...parsed };
       if (!state.logs) state.logs = [];
       if (!state.farmData) state.farmData = {};
+      if (!state.fertilizers) state.fertilizers = [];
+      if (!state.plotHistories) state.plotHistories = {};
     } catch (e) {
       console.error('Failed to parse local storage', e);
     }
+  }
+
+  if (!state.fertilizers) state.fertilizers = [];
+
+  // Migrate: if fertilizers has exactly the 3 old defaults, clear it to start from 0
+  if (state.fertilizers.length === 3 && state.fertilizers[0].id === 'fert_1' && state.fertilizers[0].name === 'ぼかし肥料') {
+    state.fertilizers = [];
+    saveState();
   }
   
   const hasOldDefaults = state.crops && state.crops.some(c => c.id === 'ninjin_wase');
@@ -345,6 +549,31 @@ function loadState() {
     });
     if (migrated) saveState();
   }
+
+  // Migrate legacy farmData
+  if (state.farmData) {
+    let migratedFarm = false;
+    Object.keys(state.farmData).forEach(pid => {
+      const plot = state.farmData[pid];
+      if (plot && !plot.ridges) {
+        let newRidges = [];
+        for (let i = 1; i <= 4; i++) {
+          if (plot[i]) {
+            newRidges.push({ id: 'r'+i, cropText: plot[i].crop || '', cropId: '', sowDate: plot[i].sowDate || '', harvestDate: plot[i].harvestDate || '', fertilizers: [] });
+          } else {
+            newRidges.push({ id: 'r'+i, cropText: '', cropId: '', sowDate: '', harvestDate: '', fertilizers: [] });
+          }
+        }
+        let newPaths = [];
+        for (let i = 1; i <= 3; i++) {
+          newPaths.push({ id: 'p'+i, nextWeedDate: '' });
+        }
+        state.farmData[pid] = { orientation: 'vertical', ridges: newRidges, paths: newPaths };
+        migratedFarm = true;
+      }
+    });
+    if (migratedFarm) saveState();
+  }
 }
 
 function saveState() {
@@ -363,12 +592,13 @@ renderDashboard();
 // Delayed chart init to ensure canvas is ready
 setTimeout(initChart, 100);
 renderCropMaster();
+renderFertMaster();
 renderHarvestShipForms();
 
 // --- UI Navigation ---
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', ['dashboard','harvest','ship','log','farm-map','crop-master'][i] === tab);
+    t.classList.toggle('active', ['dashboard','harvest','ship','waste','log','farm-map','crop-master'][i] === tab);
   });
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(tab).classList.add('active');
@@ -389,6 +619,7 @@ function switchTab(tab) {
 function renderHarvestShipForms() {
   const hList = document.getElementById('harvest-crop-list');
   const sList = document.getElementById('ship-crop-list');
+  const wList = document.getElementById('waste-crop-list');
   if (!hList || !sList) return;
   
   let html = '';
@@ -398,19 +629,22 @@ function renderHarvestShipForms() {
   
   hList.innerHTML = html.replace(/{prefix}/g, 'h').replace(/{form}/g, 'harvest');
   sList.innerHTML = html.replace(/{prefix}/g, 's').replace(/{form}/g, 'ship');
+  if (wList) wList.innerHTML = html.replace(/{prefix}/g, 'w').replace(/{form}/g, 'waste');
   
   if (state.harvestType) selectType('harvest', state.harvestType);
   if (state.shipType) selectType('ship', state.shipType);
+  if (state.wasteType) selectType('waste', state.wasteType);
 }
 
 function selectType(form, type) {
-  const prefix = form === 'harvest' ? 'h' : 's';
+  const prefix = form === 'harvest' ? 'h' : (form === 'ship' ? 's' : 'w');
   state.crops.forEach(c => {
     const el = document.getElementById(`btn-${prefix}-${c.id}`);
     if (el) el.className = 'type-btn' + (type === c.id ? ' selected-crop' : '');
   });
   if (form === 'harvest') state.harvestType = type;
-  else state.shipType = type;
+  else if (form === 'ship') state.shipType = type;
+  else state.wasteType = type;
 }
 
 // --- Data Operations ---
@@ -424,11 +658,42 @@ function recordHarvest() {
   const crop = state.crops.find(c => c.id === state.harvestType);
   if (crop) crop.stock += kg;
   
-  state.logs.unshift({ id: Date.now(), type: 'harvest', veg: state.harvestType, vegName: crop ? crop.name : state.harvestType, kg, date, memo });
+  const plotId = document.getElementById('harvest-plot').value;
+  const ridgeId = document.getElementById('harvest-ridge').value;
+  let detailMemo = memo;
+
+  if (plotId && ridgeId) {
+    const data = state.farmData[plotId];
+    if (data && data.ridges) {
+      const rdIdx = data.ridges.findIndex(r => r.id === ridgeId);
+      if (rdIdx >= 0) {
+        const rd = data.ridges[rdIdx];
+        // 収穫予定日をクリアしてアラートを消す
+        rd.harvestDate = '';
+        
+        // 履歴に追加
+        if (!state.plotHistories[plotId]) state.plotHistories[plotId] = [];
+        state.plotHistories[plotId].unshift({
+          id: Date.now() + 1,
+          year: new Date().getFullYear(),
+          date: date,
+          type: 'harvest',
+          text: `畝${rdIdx+1}: ${crop ? crop.name : ''} を収穫 (${kg}kg)`,
+          detail: memo
+        });
+        
+        detailMemo = `区画${plotId}-畝${rdIdx+1} ` + memo;
+      }
+    }
+  }
+  
+  state.logs.unshift({ id: Date.now(), type: 'harvest', veg: state.harvestType, vegName: crop ? crop.name : state.harvestType, kg, date, memo: detailMemo, plotId: plotId, ridgeId: ridgeId, rawMemo: memo });
   
   document.getElementById('harvest-kg').value = '';
   document.getElementById('harvest-memo').value = '';
   document.getElementById('harvest-date').value = today;
+  document.getElementById('harvest-plot').value = '';
+  document.getElementById('harvest-ridge').innerHTML = '<option value="">畝を選択</option>';
   state.harvestType = null;
   
   state.crops.forEach(c => {
@@ -439,6 +704,18 @@ function recordHarvest() {
   saveState();
   alert('🌱 収穫を記録しました！');
   switchTab('dashboard');
+}
+
+function updateHarvestRidgeOptions() {
+  const plotId = document.getElementById('harvest-plot').value;
+  const ridgeSel = document.getElementById('harvest-ridge');
+  ridgeSel.innerHTML = '<option value="">畝を選択</option>';
+  if (!plotId || !state.farmData[plotId] || !state.farmData[plotId].ridges) return;
+  
+  state.farmData[plotId].ridges.forEach((rd, idx) => {
+    const cropStr = rd.cropText ? ` (${rd.cropText})` : '';
+    ridgeSel.innerHTML += `<option value="${rd.id}">畝 ${idx+1}${cropStr}</option>`;
+  });
 }
 
 function recordShip() {
@@ -474,6 +751,92 @@ function recordShip() {
   switchTab('dashboard');
 }
 
+function updateWasteRidgeOptions() {
+  const plotId = document.getElementById('waste-plot').value;
+  const ridgeSel = document.getElementById('waste-ridge');
+  ridgeSel.innerHTML = '<option value="">畝を選択</option>';
+  if (!plotId || !state.farmData[plotId] || !state.farmData[plotId].ridges) return;
+  
+  state.farmData[plotId].ridges.forEach((rd, idx) => {
+    const cropStr = rd.cropText ? ` (${rd.cropText})` : '';
+    ridgeSel.innerHTML += `<option value="${rd.id}">畝 ${idx+1}${cropStr}</option>`;
+  });
+}
+
+function recordWaste() {
+  if (!state.wasteType) { alert('野菜の種類を選んでください'); return; }
+  const kg = parseInt(document.getElementById('waste-kg').value);
+  if (!kg || kg <= 0) { alert('正しい廃棄量を入力してください'); return; }
+  
+  const crop = state.crops.find(c => c.id === state.wasteType);
+  if (!crop) return;
+  if (kg > crop.stock) { 
+    alert(`在庫が足りません（現在の在庫: ${crop.stock} kg）`); 
+    return; 
+  }
+  
+  const date = document.getElementById('waste-date').value;
+  const reason = document.getElementById('waste-reason').value;
+  const memo = document.getElementById('waste-memo').value;
+  
+  const plotId = document.getElementById('waste-plot').value;
+  const ridgeId = document.getElementById('waste-ridge').value;
+  let detailMemo = reason + (memo ? ` - ${memo}` : '');
+  
+  if (plotId && ridgeId) {
+    const data = state.farmData[plotId];
+    if (data && data.ridges) {
+      const rdIdx = data.ridges.findIndex(r => r.id === ridgeId);
+      if (rdIdx >= 0) {
+        // 履歴に追加
+        if (!state.plotHistories[plotId]) state.plotHistories[plotId] = [];
+        state.plotHistories[plotId].unshift({
+          id: Date.now() + 1,
+          year: new Date().getFullYear(),
+          date: date,
+          type: 'waste',
+          text: `畝${rdIdx+1}: ${crop.name} を廃棄 (${kg}kg)`,
+          detail: detailMemo
+        });
+        
+        detailMemo = `区画${plotId}-畝${rdIdx+1} ` + detailMemo;
+      }
+    }
+  }
+  
+  crop.stock -= kg;
+  state.logs.unshift({ 
+    id: Date.now(), 
+    type: 'waste', 
+    veg: state.wasteType, 
+    vegName: crop.name, 
+    kg: kg, 
+    date: date, 
+    reason: reason,
+    memo: detailMemo,
+    plotId: plotId,
+    ridgeId: ridgeId,
+    rawMemo: memo
+  });
+  
+  document.getElementById('waste-kg').value = '';
+  document.getElementById('waste-memo').value = '';
+  document.getElementById('waste-date').value = today;
+  document.getElementById('waste-reason').value = '腐敗';
+  document.getElementById('waste-plot').value = '';
+  document.getElementById('waste-ridge').innerHTML = '<option value="">畝を選択</option>';
+  state.wasteType = null;
+  
+  state.crops.forEach(c => {
+    const el = document.getElementById(`btn-w-${c.id}`);
+    if (el) el.className = 'type-btn';
+  });
+  
+  saveState();
+  alert('🗑️ 廃棄を記録しました');
+  switchTab('dashboard');
+}
+
 // --- Farm Map Operations ---
 let currentPlot = null;
 
@@ -482,21 +845,44 @@ function renderFarmMap() {
   let html = '';
   for (let i = 1; i <= 16; i++) {
     let extraClass = (i === 15) ? ' plot-break' : '';
-    
-    // Check if plot has data
     const plotData = state.farmData[i];
+    let plotHtml = '';
     let hasData = false;
-    if (plotData) {
-      for (let r = 1; r <= 4; r++) {
-        if (plotData[r] && (plotData[r].crop || plotData[r].sowDate || plotData[r].harvestDate || plotData[r].memo)) {
+    
+    if (plotData && plotData.ridges) {
+      const ori = plotData.orientation || 'vertical';
+      extraClass += ' ' + ori;
+      
+      for (let r = 0; r < plotData.ridges.length; r++) {
+        const rd = plotData.ridges[r];
+        let emoji = '';
+        if (rd.harvestDate) {
+          if (today >= rd.harvestDate) {
+            const isSatsu = rd.cropId && rd.cropId.includes('imo');
+            emoji = isSatsu ? '🍠' : '🥕';
+          } else {
+            emoji = '🌱';
+          }
           hasData = true;
-          break;
+        } else if (rd.sowDate) {
+          emoji = '🌱';
+          hasData = true;
+        }
+        plotHtml += `<div class="plot-ridge">${emoji}</div>`;
+        
+        // Add path if not last
+        if (r < plotData.ridges.length - 1) {
+          const pt = plotData.paths[r] || {};
+          let ptEmoji = '';
+          if (pt.nextWeedDate && today >= pt.nextWeedDate) ptEmoji = '🌿';
+          plotHtml += `<div class="plot-path">${ptEmoji}</div>`;
         }
       }
     }
-    const colorStyle = hasData ? 'background: var(--primary); color: white;' : '';
     
-    html += `<div class="plot-cell${extraClass}" style="${colorStyle}" onclick="openPlot(${i})">${i}</div>`;
+    if (!plotHtml) plotHtml = i; // just number if empty
+    const colorStyle = hasData ? 'border-color: var(--primary);' : '';
+    html += `<div class="plot-cell${extraClass}" style="${colorStyle}" onclick="openPlot(${i})">${plotHtml}</div>`;
   }
   grid.innerHTML = html;
 }
@@ -504,6 +890,7 @@ function renderFarmMap() {
 function showMapView() {
   document.getElementById('map-view').style.display = 'block';
   document.getElementById('plot-view').style.display = 'none';
+  document.getElementById('history-view').style.display = 'none';
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
@@ -511,60 +898,305 @@ function openPlot(plotId) {
   currentPlot = plotId;
   document.getElementById('plot-title').textContent = `区画 ${plotId}`;
   
+  if (!state.farmData[plotId]) {
+    state.farmData[plotId] = {
+      orientation: 'vertical',
+      ridges: Array.from({length:4}, (_,i)=>({id:'r'+(i+1), cropId:'', cropText:'', sowDate:'', harvestDate:'', fertilizers:[]})),
+      paths: Array.from({length:3}, (_,i)=>({id:'p'+(i+1), nextWeedDate:''}))
+    };
+  }
+  const data = state.farmData[plotId];
+  
+  // set orientation buttons
+  document.getElementById('ori-vertical').className = 'type-btn' + (data.orientation === 'vertical' ? ' selected-crop' : '');
+  document.getElementById('ori-horizontal').className = 'type-btn' + (data.orientation === 'horizontal' ? ' selected-crop' : '');
+  
   const container = document.getElementById('ridges-container');
   let html = '';
-  const data = state.farmData[plotId] || {};
   
-  for (let i = 1; i <= 4; i++) {
-    const rData = data[i] || { crop: '', sowDate: '', harvestDate: '', memo: '' };
+  // Crop options
+  let cropOptions = '<option value="">未選択</option>';
+  state.crops.forEach(c => { cropOptions += `<option value="${c.id}">${c.name}</option>`; });
+  
+  // Fert options
+  let fertHtml = '';
+  if (state.fertilizers && state.fertilizers.length > 0) {
+    state.fertilizers.forEach(f => { fertHtml += `<label style="display:inline-flex; align-items:center; margin-right:12px; font-weight:normal; font-size:14px;"><input type="checkbox" value="${f.id}" class="fert-cb" style="width:auto; margin-right:4px;">${f.name}</label>`; });
+  } else {
+    fertHtml = '<span style="color:var(--text-light); font-size:13px;">※マスタ管理タブから肥料を追加してください</span>';
+  }
+  
+  for (let i = 0; i < data.ridges.length; i++) {
+    const rd = data.ridges[i];
     html += `
-      <div class="ridge-card">
-        <div class="ridge-title">畝 ${i}</div>
+      <div class="ridge-card" id="ridge-wrapper-${i}">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid var(--primary-light); padding-bottom: 4px; margin-bottom: 12px;">
+          <div class="ridge-title" style="border:none; margin:0; padding:0;">畝 ${i+1}</div>
+          <div>
+            <button class="btn btn-secondary" style="padding:4px 8px; font-size:12px; margin:0; width:auto;" onclick="finishRidge(${i})">この畝を終了</button>
+            <button class="btn btn-secondary" style="padding:4px 8px; font-size:12px; margin:0; width:auto; color:#D32F2F;" onclick="removeRidge(${i})">削除</button>
+          </div>
+        </div>
         <div class="form-row">
-          <label>作物の種類・品種</label>
-          <input type="text" id="ridge-${i}-crop" value="${rData.crop}" placeholder="例: 人参（早生種）">
+          <label>作物（マスタから選択）</label>
+          <select id="ridge-${i}-cropId" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg);">
+            ${cropOptions}
+          </select>
         </div>
         <div class="form-row">
           <label>播種・定植日</label>
-          <input type="date" id="ridge-${i}-sowDate" value="${rData.sowDate}">
+          <input type="date" id="ridge-${i}-sowDate" value="${rd.sowDate}">
         </div>
         <div class="form-row">
           <label>収穫予定日</label>
-          <input type="date" id="ridge-${i}-harvestDate" value="${rData.harvestDate}">
+          <input type="date" id="ridge-${i}-harvestDate" value="${rd.harvestDate}">
         </div>
-        <div class="form-row">
-          <label>農薬・肥料の使用記録</label>
-          <input type="text" id="ridge-${i}-memo" value="${rData.memo}" placeholder="例: ぼかし肥料 10kg">
+        <div class="form-row" style="margin-bottom:0;">
+          <label>使用した有機肥料</label>
+          <div id="ridge-${i}-fert">${fertHtml}</div>
+        </div>
+        <div style="margin-top: 16px;">
+          <button class="btn btn-secondary" style="padding: 10px; width: 100%; font-size: 15px; border: 2px dashed var(--primary-light); color: var(--primary); background: #F8FAF9;" onclick="copyRidge(${i})">📄 この畝と同じ設定でもう1つ追加</button>
         </div>
       </div>
     `;
+    
+    // Add path if not last
+    if (i < data.ridges.length - 1) {
+      const pt = data.paths[i] || {nextWeedDate:''};
+      html += `
+        <div class="ridge-card" style="background:#FDFDFD; border-style:dashed;">
+          <div class="ridge-title" style="color:var(--text-light); font-size:14px; border:none; margin-bottom:8px;">🌿 畝間 ${i+1} の草むしり管理</div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div style="flex:1;">
+              <label style="font-size:12px; font-weight:normal;">次回予定日</label>
+              <input type="date" id="path-${i}-weedDate" value="${pt.nextWeedDate}">
+            </div>
+            <button class="btn btn-primary" style="width:auto; padding:8px 12px; margin-top:14px;" onclick="recordWeeding(${i})">完了</button>
+          </div>
+        </div>
+      `;
+    }
   }
   container.innerHTML = html;
   
+  // Set selected values
+  for (let i = 0; i < data.ridges.length; i++) {
+    const rd = data.ridges[i];
+    const select = document.getElementById(`ridge-${i}-cropId`);
+    if (select) select.value = rd.cropId || '';
+    
+    const fertContainer = document.getElementById(`ridge-${i}-fert`);
+    if (fertContainer && rd.fertilizers) {
+      const cbs = fertContainer.querySelectorAll('input[type="checkbox"]');
+      cbs.forEach(cb => {
+        if (rd.fertilizers.includes(cb.value)) cb.checked = true;
+      });
+    }
+  }
+  
   document.getElementById('map-view').style.display = 'none';
   document.getElementById('plot-view').style.display = 'block';
+  document.getElementById('history-view').style.display = 'none';
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 function savePlot() {
   if (!currentPlot) return;
+  const data = state.farmData[currentPlot];
   
-  if (!state.farmData) state.farmData = {};
-  if (!state.farmData[currentPlot]) state.farmData[currentPlot] = {};
-  
-  for (let i = 1; i <= 4; i++) {
-    state.farmData[currentPlot][i] = {
-      crop: document.getElementById(`ridge-${i}-crop`).value,
-      sowDate: document.getElementById(`ridge-${i}-sowDate`).value,
-      harvestDate: document.getElementById(`ridge-${i}-harvestDate`).value,
-      memo: document.getElementById(`ridge-${i}-memo`).value
-    };
+  for (let i = 0; i < data.ridges.length; i++) {
+    const cropId = document.getElementById(`ridge-${i}-cropId`).value;
+    const cObj = state.crops.find(c => c.id === cropId);
+    
+    data.ridges[i].cropId = cropId;
+    data.ridges[i].cropText = cObj ? cObj.name : '';
+    data.ridges[i].sowDate = document.getElementById(`ridge-${i}-sowDate`).value;
+    data.ridges[i].harvestDate = document.getElementById(`ridge-${i}-harvestDate`).value;
+    
+    const fertCbs = document.getElementById(`ridge-${i}-fert`).querySelectorAll('input[type="checkbox"]:checked');
+    data.ridges[i].fertilizers = Array.from(fertCbs).map(cb => cb.value);
+    
+    if (i < data.ridges.length - 1) {
+      const weedEl = document.getElementById(`path-${i}-weedDate`);
+      if (weedEl) {
+        if (!data.paths[i]) data.paths[i] = {id:'p'+(i+1), nextWeedDate:''};
+        data.paths[i].nextWeedDate = weedEl.value;
+      }
+    }
   }
   
   saveState();
   alert(`区画 ${currentPlot} の情報を保存しました！`);
   renderFarmMap();
   showMapView();
+}
+
+// Plot Actions
+function setPlotOrientation(ori) {
+  if (!currentPlot) return;
+  state.farmData[currentPlot].orientation = ori;
+  document.getElementById('ori-vertical').className = 'type-btn' + (ori === 'vertical' ? ' selected-crop' : '');
+  document.getElementById('ori-horizontal').className = 'type-btn' + (ori === 'horizontal' ? ' selected-crop' : '');
+}
+
+function addRidge() {
+  if (!currentPlot) return;
+  const data = state.farmData[currentPlot];
+  // save current form state first
+  savePlotFormState(data);
+  const newId = data.ridges.length + 1;
+  data.ridges.push({id:'r'+newId, cropId:'', cropText:'', sowDate:'', harvestDate:'', fertilizers:[]});
+  if (data.ridges.length > 1) {
+    data.paths.push({id:'p'+(newId-1), nextWeedDate:''});
+  }
+  openPlot(currentPlot);
+}
+
+function removeRidge(idx) {
+  if (!currentPlot || !confirm('この畝を削除しますか？')) return;
+  const data = state.farmData[currentPlot];
+  savePlotFormState(data);
+  data.ridges.splice(idx, 1);
+  if (data.paths.length > 0) {
+    // remove corresponding path
+    data.paths.splice(Math.min(idx, data.paths.length-1), 1);
+  }
+  openPlot(currentPlot);
+}
+
+function savePlotFormState(data) {
+  for (let i = 0; i < data.ridges.length; i++) {
+    const sel = document.getElementById(`ridge-${i}-cropId`);
+    if(sel) {
+      data.ridges[i].cropId = sel.value;
+      const cObj = state.crops.find(c => c.id === sel.value);
+      data.ridges[i].cropText = cObj ? cObj.name : '';
+      data.ridges[i].sowDate = document.getElementById(`ridge-${i}-sowDate`).value;
+      data.ridges[i].harvestDate = document.getElementById(`ridge-${i}-harvestDate`).value;
+      const fertCbs = document.getElementById(`ridge-${i}-fert`).querySelectorAll('input[type="checkbox"]:checked');
+      data.ridges[i].fertilizers = Array.from(fertCbs).map(cb => cb.value);
+    }
+    if (i < data.ridges.length - 1) {
+      const weedEl = document.getElementById(`path-${i}-weedDate`);
+      if (weedEl) data.paths[i].nextWeedDate = weedEl.value;
+    }
+  }
+}
+
+function copyRidge(idx) {
+  if (!currentPlot) return;
+  const data = state.farmData[currentPlot];
+  savePlotFormState(data);
+  const src = data.ridges[idx];
+  
+  const newId = Date.now();
+  data.ridges.splice(idx + 1, 0, {
+    id: 'r' + newId,
+    cropId: src.cropId,
+    cropText: src.cropText,
+    sowDate: src.sowDate,
+    harvestDate: src.harvestDate,
+    fertilizers: [...src.fertilizers]
+  });
+  if (data.ridges.length > 1) {
+    data.paths.splice(idx, 0, {id:'p'+newId, nextWeedDate:''});
+  }
+  openPlot(currentPlot);
+  alert('畝をコピーしました。必要に応じて品種などを変更してください。');
+}
+
+function finishRidge(idx) {
+  if (!currentPlot || !confirm('この畝の栽培を終了し、履歴に記録しますか？')) return;
+  const data = state.farmData[currentPlot];
+  savePlotFormState(data);
+  const rd = data.ridges[idx];
+  
+  if (rd.cropId || rd.cropText || rd.sowDate) {
+    if (!state.plotHistories[currentPlot]) state.plotHistories[currentPlot] = [];
+    const fertNames = rd.fertilizers.map(fid => {
+      const f = state.fertilizers.find(x => x.id === fid);
+      return f ? f.name : '';
+    }).filter(Boolean).join('、');
+    
+    state.plotHistories[currentPlot].unshift({
+      id: Date.now(),
+      year: new Date().getFullYear(),
+      date: today,
+      type: 'cultivation',
+      text: `畝${idx+1}: ${rd.cropText || '未指定'} を栽培完了`,
+      detail: `播種: ${rd.sowDate || '-'} / 肥料: ${fertNames || 'なし'}`
+    });
+  }
+  
+  data.ridges[idx] = {id:rd.id, cropId:'', cropText:'', sowDate:'', harvestDate:'', fertilizers:[]};
+  saveState();
+  openPlot(currentPlot);
+  alert('畝を終了し、履歴に記録しました');
+}
+
+function recordWeeding(idx) {
+  if (!currentPlot) return;
+  const data = state.farmData[currentPlot];
+  savePlotFormState(data);
+  
+  if (!state.plotHistories[currentPlot]) state.plotHistories[currentPlot] = [];
+  state.plotHistories[currentPlot].unshift({
+    id: Date.now(),
+    year: new Date().getFullYear(),
+    date: today,
+    type: 'weed',
+    text: `畝間${idx+1} の草むしり完了`,
+    detail: ''
+  });
+  
+  data.paths[idx].nextWeedDate = ''; // reset
+  saveState();
+  openPlot(currentPlot);
+  alert('草むしりを記録しました');
+}
+
+function showPlotHistory() {
+  if (!currentPlot) return;
+  const container = document.getElementById('history-container');
+  const hists = state.plotHistories[currentPlot] || [];
+  
+  if (hists.length === 0) {
+    container.innerHTML = '<div class="empty">まだ履歴がありません</div>';
+  } else {
+    // Group by year
+    const groups = {};
+    hists.forEach(h => {
+      if (!groups[h.year]) groups[h.year] = [];
+      groups[h.year].push(h);
+    });
+    
+    let html = '';
+    Object.keys(groups).sort((a,b)=>b-a).forEach(yr => {
+      html += `<h4 style="margin: 12px 0 8px; color:var(--primary); border-bottom:1px solid var(--primary-light);">${yr}年</h4>`;
+      groups[yr].forEach(h => {
+        html += `
+          <div class="log-item">
+            <div class="log-header">
+              <span class="badge ${h.type==='weed'?'badge-type':'badge-crop'}">${h.type==='weed'?'草むしり':'栽培'}</span>
+              <span class="log-date">${h.date}</span>
+            </div>
+            <div style="font-size:14px; font-weight:700; margin-top:4px;">${h.text}</div>
+            ${h.detail ? `<div class="log-memo">${h.detail}</div>` : ''}
+          </div>
+        `;
+      });
+    });
+    container.innerHTML = html;
+  }
+  
+  document.getElementById('plot-view').style.display = 'none';
+  document.getElementById('history-view').style.display = 'block';
+}
+
+function hidePlotHistory() {
+  document.getElementById('plot-view').style.display = 'block';
+  document.getElementById('history-view').style.display = 'none';
 }
 
 // --- Rendering ---
@@ -576,15 +1208,61 @@ function renderDashboard() {
   });
   stockCards.innerHTML = stockHtml;
   
+  // Dashboard Tasks
+  const tasksContainer = document.getElementById('dashboard-tasks');
+  if (tasksContainer) {
+    let taskHtml = '';
+    const todayObj = new Date(today);
+    
+    Object.keys(state.farmData).forEach(pid => {
+      const pData = state.farmData[pid];
+      if (!pData || !pData.ridges) return;
+      
+      // Check ridges
+      pData.ridges.forEach((rd, idx) => {
+        if (rd.harvestDate) {
+          const hDate = new Date(rd.harvestDate);
+          const diffDays = Math.ceil((hDate - todayObj) / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) {
+            const isSatsu = rd.cropId && rd.cropId.includes('imo');
+            taskHtml += `<div class="task-alert danger">${isSatsu?'🍠':'🥕'} 区画${pid}の${rd.cropText||'作物'}が収穫予定日を過ぎています</div>`;
+          } else if (diffDays <= 3) {
+            taskHtml += `<div class="task-alert">🟡 区画${pid}の${rd.cropText||'作物'}の収穫が近づいています</div>`;
+          }
+        }
+      });
+      // Check paths
+      pData.paths.forEach((pt, idx) => {
+        if (pt.nextWeedDate) {
+          const wDate = new Date(pt.nextWeedDate);
+          const diffDays = Math.ceil((wDate - todayObj) / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) {
+            taskHtml += `<div class="task-alert danger">🌿 区画${pid}・畝間${idx+1}の草むしり予定日を過ぎています</div>`;
+          } else if (diffDays <= 3) {
+            taskHtml += `<div class="task-alert">🟡 区画${pid}・畝間${idx+1}の草むしりが近づいています</div>`;
+          }
+        }
+      });
+    });
+    if (!taskHtml) {
+      taskHtml = `<div class="task-alert" style="background:#E8F0EA; border-color:#2C5E3B; color:#2C5E3B;">✅ 今日のタスクはありません。農地は良好です！</div>`;
+    }
+    tasksContainer.innerHTML = taskHtml;
+  }
+  
   const now = new Date();
   const currentMonthPrefix = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   
   const monthLogs = state.logs.filter(l => l.date && l.date.startsWith(currentMonthPrefix));
   const mh = monthLogs.filter(l => l.type === 'harvest').reduce((a,b) => a + b.kg, 0);
   const ms = monthLogs.filter(l => l.type === 'ship').reduce((a,b) => a + b.kg, 0);
+  const mw = monthLogs.filter(l => l.type === 'waste').reduce((a,b) => a + b.kg, 0);
   
   document.getElementById('monthly-harvest').textContent = mh + ' kg';
   document.getElementById('monthly-ship').textContent = ms + ' kg';
+  if (document.getElementById('monthly-waste')) {
+    document.getElementById('monthly-waste').textContent = mw + ' kg';
+  }
   
   const latest = state.logs.slice(0,3);
   const el = document.getElementById('dashboard-log');
@@ -607,10 +1285,10 @@ function renderLog() {
 
 function buildLogItemHTML(l, showMemo = false) {
   const vegName = l.vegName || l.veg;
-  const typeName = l.type === 'harvest' ? '収穫' : '出荷';
+  const typeName = l.type === 'harvest' ? '収穫' : (l.type === 'ship' ? '出荷' : '廃棄');
   const prefix = l.type === 'harvest' ? '+' : '-';
-  const color = l.type === 'harvest' ? 'var(--primary)' : '#D32F2F';
-  const detail = l.type === 'harvest' ? l.memo : l.dest;
+  const color = l.type === 'harvest' ? 'var(--primary)' : (l.type === 'ship' ? '#D32F2F' : '#757575');
+  const detail = l.type === 'harvest' ? l.memo : (l.type === 'ship' ? l.dest : l.memo);
   
   let html = `
     <div class="log-item">
@@ -629,8 +1307,153 @@ function buildLogItemHTML(l, showMemo = false) {
     html += `<div class="log-memo">📝 ${detail}</div>`;
   }
   
+  if (showMemo) {
+    html += `
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+        <button class="btn btn-secondary" style="padding:4px 12px; font-size:12px; margin:0; width:auto;" onclick="openEditLogModal(${l.id})">修正</button>
+        <button class="btn btn-secondary" style="padding:4px 12px; font-size:12px; margin:0; width:auto; color:#D32F2F;" onclick="deleteLog(${l.id})">削除</button>
+      </div>
+    `;
+  }
+  
   html += `</div>`;
   return html;
+}
+
+// --- Edit/Delete Logs ---
+function openEditLogModal(id) {
+  const log = state.logs.find(l => l.id === id);
+  if (!log) return;
+  
+  document.getElementById('edit-log-id').value = id;
+  document.getElementById('edit-log-date').value = log.date;
+  document.getElementById('edit-log-kg').value = log.kg;
+  
+  const cropSel = document.getElementById('edit-log-crop');
+  cropSel.innerHTML = state.crops.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  cropSel.value = log.veg;
+  
+  if (log.type === 'harvest') {
+    document.getElementById('edit-log-amount-label').textContent = '収穫量 (kg)';
+    document.getElementById('edit-log-harvest-fields').style.display = 'block';
+    document.getElementById('edit-log-ship-fields').style.display = 'none';
+    document.getElementById('edit-log-waste-fields').style.display = 'none';
+    
+    document.getElementById('edit-log-plot').value = log.plotId || '';
+    updateEditRidgeOptions();
+    if (log.ridgeId) document.getElementById('edit-log-ridge').value = log.ridgeId;
+    document.getElementById('edit-log-memo').value = log.rawMemo || log.memo || '';
+  } else if (log.type === 'ship') {
+    document.getElementById('edit-log-amount-label').textContent = '出荷量 (kg)';
+    document.getElementById('edit-log-harvest-fields').style.display = 'none';
+    document.getElementById('edit-log-ship-fields').style.display = 'block';
+    document.getElementById('edit-log-waste-fields').style.display = 'none';
+    document.getElementById('edit-log-dest').value = log.dest || '';
+  } else if (log.type === 'waste') {
+    document.getElementById('edit-log-amount-label').textContent = '廃棄量 (kg)';
+    document.getElementById('edit-log-harvest-fields').style.display = 'none';
+    document.getElementById('edit-log-ship-fields').style.display = 'none';
+    document.getElementById('edit-log-waste-fields').style.display = 'block';
+    document.getElementById('edit-log-waste-reason').value = log.reason || '腐敗';
+    document.getElementById('edit-log-waste-memo').value = log.rawMemo || '';
+  }
+  
+  document.getElementById('edit-log-modal').style.display = 'flex';
+}
+
+function closeEditLogModal() {
+  document.getElementById('edit-log-modal').style.display = 'none';
+}
+
+function updateEditRidgeOptions() {
+  const plotId = document.getElementById('edit-log-plot').value;
+  const ridgeSel = document.getElementById('edit-log-ridge');
+  ridgeSel.innerHTML = '<option value="">畝を選択</option>';
+  if (!plotId || !state.farmData[plotId] || !state.farmData[plotId].ridges) return;
+  
+  state.farmData[plotId].ridges.forEach((rd, idx) => {
+    const cropStr = rd.cropText ? ` (${rd.cropText})` : '';
+    ridgeSel.innerHTML += `<option value="${rd.id}">畝 ${idx+1}${cropStr}</option>`;
+  });
+}
+
+function saveLogEdit() {
+  const id = parseInt(document.getElementById('edit-log-id').value);
+  const log = state.logs.find(l => l.id === id);
+  if (!log) return;
+  
+  const newVeg = document.getElementById('edit-log-crop').value;
+  const newKg = parseInt(document.getElementById('edit-log-kg').value);
+  if (!newKg || newKg < 0) { alert('正しい量を入力してください'); return; }
+  
+  const oldCrop = state.crops.find(c => c.id === log.veg);
+  const newCrop = state.crops.find(c => c.id === newVeg);
+  
+  // Revert old stock
+  if (oldCrop) {
+    if (log.type === 'harvest') oldCrop.stock -= log.kg;
+    else oldCrop.stock += log.kg;
+  }
+  
+  // Apply new stock
+  if (newCrop) {
+    if (log.type === 'harvest') newCrop.stock += newKg;
+    else newCrop.stock -= newKg;
+  }
+  
+  log.veg = newVeg;
+  log.vegName = newCrop ? newCrop.name : newVeg;
+  log.kg = newKg;
+  log.date = document.getElementById('edit-log-date').value;
+  
+  if (log.type === 'harvest') {
+    log.plotId = document.getElementById('edit-log-plot').value;
+    log.ridgeId = document.getElementById('edit-log-ridge').value;
+    log.rawMemo = document.getElementById('edit-log-memo').value;
+    
+    let detailMemo = log.rawMemo;
+    if (log.plotId && log.ridgeId) {
+      const data = state.farmData[log.plotId];
+      if (data && data.ridges) {
+        const rdIdx = data.ridges.findIndex(r => r.id === log.ridgeId);
+        if (rdIdx >= 0) detailMemo = `区画${log.plotId}-畝${rdIdx+1} ` + log.rawMemo;
+      }
+    }
+    log.memo = detailMemo;
+  } else if (log.type === 'ship') {
+    log.dest = document.getElementById('edit-log-dest').value;
+  } else if (log.type === 'waste') {
+    log.reason = document.getElementById('edit-log-waste-reason').value;
+    log.rawMemo = document.getElementById('edit-log-waste-memo').value;
+    log.memo = log.reason + (log.rawMemo ? ` - ${log.rawMemo}` : '');
+  }
+  
+  saveState();
+  closeEditLogModal();
+  renderLog();
+  renderDashboard();
+  updateChart();
+  alert('記録を修正しました！');
+}
+
+function deleteLog(id) {
+  if (!confirm('この記録を削除しますか？\n（在庫も自動で再計算されます）')) return;
+  
+  const logIdx = state.logs.findIndex(l => l.id === id);
+  if (logIdx === -1) return;
+  const log = state.logs[logIdx];
+  
+  const crop = state.crops.find(c => c.id === log.veg);
+  if (crop) {
+    if (log.type === 'harvest') crop.stock -= log.kg;
+    else crop.stock += log.kg;
+  }
+  
+  state.logs.splice(logIdx, 1);
+  saveState();
+  renderLog();
+  renderDashboard();
+  updateChart();
 }
 
 // --- Chart.js ---
@@ -764,6 +1587,44 @@ function deleteCrop(id) {
   renderHarvestShipForms();
   renderDashboard();
   updateChart();
+}
+
+// --- Fertilizer Master Operations ---
+function renderFertMaster() {
+  const list = document.getElementById('fert-list');
+  if (!list) return;
+  
+  let html = '';
+  state.fertilizers.forEach(f => {
+    html += `
+      <div class="log-item" style="flex-direction: row; justify-content: space-between; align-items: center;">
+        <div style="font-size: 16px; font-weight: 700;">${f.name}</div>
+        <button class="btn btn-secondary" style="margin: 0; padding: 6px 12px; font-size: 13px; width: auto; color: #D32F2F;" onclick="deleteFertilizer('${f.id}')">削除</button>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+}
+
+function addFertilizer() {
+  const nameInput = document.getElementById('new-fert-name');
+  const name = nameInput.value.trim();
+  if (!name) return;
+  
+  const id = 'fert_' + Date.now();
+  state.fertilizers.push({ id, name });
+  saveState();
+  
+  nameInput.value = '';
+  renderFertMaster();
+  alert(`${name} を追加しました！`);
+}
+
+function deleteFertilizer(id) {
+  if (!confirm('本当に削除しますか？')) return;
+  state.fertilizers = state.fertilizers.filter(f => f.id !== id);
+  saveState();
+  renderFertMaster();
 }
 
 // --- CSV Export ---
